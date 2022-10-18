@@ -17,13 +17,15 @@ var app = express();
 app.use(express.static('public'));
 app.set('view engine','ejs');
 
-app.listen(8080);
+app.listen(8080,()=>{
+   console.log("http://localhost:8080");
+});
 app.use(bodyParser.urlencoded({extended:true}));
 app.use(session({secret:"TechWithSuman",saveUninitialized: true,resave:true}))
 
 
 
-function isProductInCart(cart,id){
+const isProductInCart = (cart,id) =>{
    
    for(let i=0; i<cart.length; i++){
       if(cart[i].id == id){
@@ -36,7 +38,7 @@ function isProductInCart(cart,id){
 }
 
 
-function calculateTotal(cart,req){
+const calculateTotal = (cart,req) =>{
    total = 0;
    for(let i=0; i<cart.length; i++){
       //if we're offering a discounted price
@@ -55,7 +57,7 @@ function calculateTotal(cart,req){
 
 
 // localhost:8080
-app.get('/',function(req,res){
+app.get('/',(req,res) =>{
 
    
    const conn =  mysql.createConnection({
@@ -78,7 +80,7 @@ app.get('/',function(req,res){
 
 
 
-app.post('/add_to_cart',function(req,res){
+app.post('/add_to_cart',(req,res) =>{
 
    var id = req.body.id;
    var name = req.body.name;
@@ -114,7 +116,7 @@ app.post('/add_to_cart',function(req,res){
 
 
 
-app.get('/cart',function(req,res){
+app.get('/cart',(req,res) =>{
 
    var cart = req.session.cart;
    var total = req.session.total;
@@ -126,7 +128,7 @@ app.get('/cart',function(req,res){
 
 
 
-app.post('/remove_product',function(req,res){
+app.post('/remove_product',(req,res) =>{
 
    var id = req.body.id;
    var cart = req.session.cart;
@@ -143,7 +145,7 @@ app.post('/remove_product',function(req,res){
 
 });
 
-app.post('/edit_product_quantity',function(req,res){
+app.post('/edit_product_quantity',(req,res) =>{
 
    //get values from inputs
    var id = req.body.id;
@@ -189,12 +191,12 @@ app.post('/edit_product_quantity',function(req,res){
 
 
 
-app.get('/checkout',function(req,res){
+app.get('/checkout',(req,res) =>{
    var total = req.session.total
    res.render('pages/checkout',{total:total})
 })
 
-app.post('/place_order',function(req,res){
+app.post('/place_order',(req,res) =>{
 
    var name = req.body.name;
    var email = req.body.email;
@@ -204,7 +206,7 @@ app.post('/place_order',function(req,res){
    var cost = req.session.total;
    var status = "not paid";
    var date = new Date();
-   var products_ids="";
+   var products_id="";
    var id = Date.now();
    req.session.order_id = id;
    
@@ -213,12 +215,13 @@ app.post('/place_order',function(req,res){
       host:"localhost",
       user:"root",
       password:"",
-      database:"node_project"
+      database: 'e-commerce'
    })
 
-   var cart = req.session.cart;
+   var cart = req.session?.cart;
+   
    for(let i=0; i<cart.length; i++){
-      products_ids = products_ids + "," +cart[i].id;
+      products_id = products_id + "," +cart[i].id;
    }
 
   
@@ -227,19 +230,30 @@ app.post('/place_order',function(req,res){
       if(err){
          console.log(err);
       }else{
-         var query = "INSERT INTO orders (id,cost,name,email,status,city,address,phone,date,products_ids) VALUES ?";
+         var query = "INSERT INTO orders (id,cost,name,email,status,city,address,phone,date,products_id) VALUES ?";
          var values = [
-            [id,cost,name,email,status,city,address,phone,date,products_ids]
+            [id,cost,name,email,status,city,address,phone,date,products_id]
          ];
-         
+       
          con.query(query,[values],(err,result)=>{
+            if (err) {
+               console.log(err);
+            }
+            else
+            console.log(result);
 
             for(let i=0;i<cart.length;i++){
-               var query = "INSERT INTO order_items (order_id,product_id,product_name,product_price,product_image,product_quantity,order_date) VALUES ?";
+               var query = "INSERT INTO order_itams (order_id,product_id,product_name,product_price,product_image,product_quantity,order_date) VALUES ?";
                var values = [
                   [id,cart[i].id,cart[i].name,cart[i].price,cart[i].image,cart[i].quantity,new Date()]
                ];
-               con.query(query,[values],(err,result)=>{})
+               con.query(query,[values],(err,result)=>{
+                  if (err) {
+                     console.log(err);
+                  }
+                  else
+                  console.log(result);
+               })
             }
 
 
@@ -258,14 +272,14 @@ app.post('/place_order',function(req,res){
 
 
 
-app.get('/payment',function(req,res){
+app.get('/payment',(req,res) =>{
    var total = req.session.total
    res.render('pages/payment',{total:total})
 })
 
 
 
-app.get("/verify_payment",function(req,res){
+app.get("/verify_payment",(req,res) =>{
    var transaction_id = req.query.transaction_id;
    var order_id = req.session.order_id;
 
@@ -297,14 +311,14 @@ app.get("/verify_payment",function(req,res){
 })
 
 
-app.get("/thank_you",function(req,res){
+app.get("/thank_you",(req,res) =>{
 
    var order_id = req.session.order_id;
    res.render("pages/thank_you",{order_id:order_id})
 })
 
 
-app.get('/single_product',function(req,res){
+app.get('/single_product',(req,res) =>{
 
    var id = req.query.id;
 
@@ -324,7 +338,7 @@ app.get('/single_product',function(req,res){
 });
 
 
-app.get('/products',function(req,res){
+app.get('/products',(req,res) =>{
 
    const con =  mysql.createConnection({
       host: 'localhost',
@@ -341,7 +355,7 @@ app.get('/products',function(req,res){
    
 });
 
-app.get('/about',function(req,res){
+app.get('/about',(req,res) =>{
    
    res.render('pages/about');
 });
