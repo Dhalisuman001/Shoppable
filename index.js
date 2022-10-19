@@ -1,3 +1,4 @@
+require('dotenv').config();
 var express = require('express')
 var ejs = require('ejs');
 var bodyParser = require('body-parser');
@@ -236,11 +237,8 @@ app.post('/place_order',(req,res) =>{
          ];
        
          con.query(query,[values],(err,result)=>{
-            if (err) {
-               console.log(err);
-            }
-            else
-            console.log(result);
+           
+            
 
             for(let i=0;i<cart.length;i++){
                var query = "INSERT INTO order_itams (order_id,product_id,product_name,product_price,product_image,product_quantity,order_date) VALUES ?";
@@ -248,11 +246,7 @@ app.post('/place_order',(req,res) =>{
                   [id,cart[i].id,cart[i].name,cart[i].price,cart[i].image,cart[i].quantity,new Date()]
                ];
                con.query(query,[values],(err,result)=>{
-                  if (err) {
-                     console.log(err);
-                  }
-                  else
-                  console.log(result);
+                  
                })
             }
 
@@ -273,8 +267,8 @@ app.post('/place_order',(req,res) =>{
 
 
 app.get('/payment',(req,res) =>{
-   var total = req.session.total
-   res.render('pages/payment',{total:total})
+   var total = req.session.total;
+   res.render('pages/payment',{total:total,clientId:process.env.PAYPAL_CLIENT_ID})
 })
 
 
@@ -282,7 +276,7 @@ app.get('/payment',(req,res) =>{
 app.get("/verify_payment",(req,res) =>{
    var transaction_id = req.query.transaction_id;
    var order_id = req.session.order_id;
-
+console.log(transaction_id);
    const con =  mysql.createConnection({
       host: 'localhost',
       user: 'root',
@@ -300,7 +294,10 @@ app.get("/verify_payment",(req,res) =>{
                   [order_id,transaction_id,new Date()]
                ]
                con.query(query,[values],(err,result)=>{
-                  
+                  if (err) {
+                     console.log(err);
+                  }
+                  console.log(result);
                   con.query("UPDATE orders SET status='paid' WHERE id='"+order_id+"'",(err,result)=>{})
                   res.redirect('/thank_you')
                
